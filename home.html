@@ -3,82 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Protected Area</title>
+    <title>Home - Protected</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
         }
         .container {
-            max-width: 800px;
-            margin: 50px auto;
+            max-width: 900px;
+            margin: 60px auto;
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #333;
+            text-align: center;
+            color: #222;
+        }
+        .content {
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+        .logout-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 10px 20px;
+            background: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            background: #c9302c;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Welcome to the Protected Area</h1>
-        <p>You have successfully logged in.</p>
-        <p>This page is only accessible with a valid access cookie.</p>
+        <div class="content">
+            <p>You have successfully logged in with the correct password.</p>
+            <p>This page is protected and will redirect back to the login page if the cookie is invalid or expired.</p>
+            
+            <!-- Add your actual content here -->
+            <h2>Protected Content</h2>
+            <p>This is your secure home page. Only users with a valid access cookie can see this.</p>
+        </div>
         
-        <!-- Add your protected content here -->
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <script>
-        // Function to get cookie by name
+        // Get cookie by name
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) {
-                let cookieValue = parts.pop().split(';').shift();
-                return cookieValue;
-            }
+            if (parts.length === 2) return parts.pop().split(';').shift();
             return null;
         }
 
-        // Function to validate and decode the obfuscated cookie
+        // Validate the obfuscated cookie
         function isValidAccessCookie() {
             const obfuscated = getCookie('accessData');
             if (!obfuscated) return false;
 
             try {
-                // Reverse the obfuscation
-                let reversed = obfuscated.split('').reverse().join('');
-                // Shift characters back by -5
-                let decoded = '';
-                for (let char of reversed) {
-                    decoded += String.fromCharCode(char.charCodeAt(0) - 5);
-                }
-                // Add back the = padding if needed
-                while (decoded.length % 4) {
-                    decoded += '=';
+                // 1. Shift characters back by -5
+                let shifted = '';
+                for (let char of obfuscated) {
+                    shifted += String.fromCharCode(char.charCodeAt(0) - 5);
                 }
 
-                const data = atob(decoded);
-                const expires = parseInt(data.split('=')[1]);
+                // 2. Reverse the string
+                let reversed = shifted.split('').reverse().join('');
+
+                // 3. Add Base64 padding
+                let padded = reversed;
+                while (padded.length % 4 !== 0) {
+                    padded += '=';
+                }
+
+                // 4. Decode base64
+                const decoded = atob(padded);
+
+                // 5. Extract expiration timestamp
+                const expires = parseInt(decoded.split('=')[1]);
 
                 if (isNaN(expires) || Date.now() > expires) {
-                    return false; // Cookie expired
+                    return false;
                 }
                 return true;
             } catch (e) {
+                console.error("Cookie decode failed:", e);
                 return false;
             }
         }
 
-        // Check cookie and redirect if invalid/missing
+        // Logout function
+        function logout() {
+            document.cookie = "accessData=; path=/; max-age=0";
+            window.location.href = "/";
+        }
+
+        // Check cookie on page load
         if (!isValidAccessCookie()) {
-            window.location.href = "/"; // Redirect to base URL (root)
-            // Alternative: window.location.href = "index.html"; // if you want specific page
+            window.location.href = "/";  // Redirect to base URL (login page)
         }
     </script>
 </body>
